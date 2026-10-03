@@ -95,17 +95,26 @@ def _build_prompt(request: RouteRequest, candidates: list[dict]) -> str:
     )
 
 
+# Человекочитаемые названия зданий музея. Если здание не в списке,
+# показываем нейтральное «Здание N».
+BUILDING_NAMES = {
+    "117": "Галерея искусства стран Европы и Америки XIX–XX веков",
+}
+
+
 def _location_from_candidate(candidate: dict) -> str:
     """Человекочитаемая локация экспоната из данных датасета.
 
     В датасете хранятся номер зала (`hall`) и номер здания (`building`).
-    У части экспонатов зал пустой — тогда показываем хотя бы здание.
+    У части экспонатов зал пустой — тогда показываем хотя бы здание,
+    для известных зданий — их человекочитаемое название.
     """
     parts: list[str] = []
     if candidate.get("hall"):
         parts.append(f"Зал {candidate['hall']}")
-    if candidate.get("building"):
-        parts.append(f"Здание {candidate['building']}")
+    building = candidate.get("building")
+    if building:
+        parts.append(BUILDING_NAMES.get(building, f"Здание {building}"))
     return ", ".join(parts)
 
 
