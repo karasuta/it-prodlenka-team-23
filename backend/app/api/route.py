@@ -43,9 +43,14 @@ class RouteStop(BaseModel):
     image: str = ""
 
 
+class RouteGroup(BaseModel):
+    building: str
+    stops: list[RouteStop]
+
+
 class RouteResponse(BaseModel):
     intro: str
-    route: list[RouteStop]
+    groups: list[RouteGroup]
     outro: str
 
 
@@ -99,8 +104,16 @@ def _build_prompt(request: RouteRequest, candidates: list[dict]) -> str:
 # Человекочитаемые названия зданий музея. Если здание не в списке,
 # показываем нейтральное «Здание N».
 BUILDING_NAMES = {
+    "116": "Главное здание",
     "117": "Галерея искусства стран Европы и Америки XIX–XX веков",
 }
+
+
+def _building_name(building: str) -> str:
+    """Человекочитаемое название здания (или «Здание N» для неизвестных)."""
+    if not building:
+        return "Экспозиция"
+    return BUILDING_NAMES.get(building, f"Здание {building}")
 
 
 def _location_from_candidate(candidate: dict) -> str:
@@ -115,8 +128,14 @@ def _location_from_candidate(candidate: dict) -> str:
         parts.append(f"Зал {candidate['hall']}")
     building = candidate.get("building")
     if building:
-        parts.append(BUILDING_NAMES.get(building, f"Здание {building}"))
+        parts.append(_building_name(building))
     return ", ".join(parts)
+
+
+def _candidate_building(stop_id: str, candidates: dict[str, dict]) -> str:
+    """Номер здания экспоната из датасета (пустая строка, если неизвестно)."""
+    candidate = candidates.get(stop_id, {})
+    return str(candidate.get("building") or "")
 
 
 def _parse_route(raw_answer: str, candidates: dict[str, dict]) -> RouteResponse:
@@ -155,9 +174,21 @@ def _parse_route(raw_answer: str, candidates: dict[str, dict]) -> RouteResponse:
                 image=candidate.get("images", [""])[0] if candidate.get("images") else "",
             )
         )
+
+    # Группируем остановки по зданию, сохраняя порядок первого появления здания.
+    groups: list[RouteGroup] = []
+    group_by_building: dict[str, RouteGroup] = {}
+    for stop in stops:
+        building = str(_candidate_building(stop.id, candidates))
+        if building not in group_by_building:
+            # В заголовок группы сразу кладём человекочитаемое название здания.
+            group_by_building[building] = RouteGroup(building=_building_name(building), stops=[])
+            groups.append(group_by_building[building])
+        group_by_building[building].stops.append(stop)
+
     return RouteResponse(
         intro=str(payload.get("intro", "")),
-        route=stops,
+        groups=groups,
         outro=str(payload.get("outro", "")),
     )
 

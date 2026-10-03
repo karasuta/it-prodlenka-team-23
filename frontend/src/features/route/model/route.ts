@@ -17,8 +17,13 @@ export type RouteStop = {
   image: string;
 };
 
+export type RouteGroup = {
+  building: string;
+  stops: RouteStop[];
+};
+
 export type RouteResponse = {
   intro: string;
-  route: RouteStop[];
+  groups: RouteGroup[];
   outro: string;
 };
