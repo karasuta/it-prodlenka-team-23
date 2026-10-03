@@ -65,7 +65,8 @@ def _author(raw: dict[str, Any]) -> str:
     authors = raw.get("authors")
     if not isinstance(authors, dict):
         return ""
-    names = [_ru(item.get("name")) for item in authors.values() if isinstance(item, dict)]
+    # В датасете автор лежит прямо в полях ru/en (без вложенного name).
+    names = [_ru(item) for item in authors.values() if isinstance(item, dict)]
     return ", ".join(name for name in names if name)
 
 
