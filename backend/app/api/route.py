@@ -69,7 +69,6 @@ AGENT_INSTRUCTIONS = """Ты — «Искусствовед-переводчик
       "id": "числовой id из списка",
       "name": "Название",
       "author": "Автор или 'Неизвестный мастер'",
-      "location": "где находится экспонат: зал или часть музея",
       "why": "почему объект в маршруте для этой аудитории",
       "story": "рассказ для новичка: что вижу, почему круто, деталь (3-5 предложений)",
       "fun_fact": "одна короткая зацепка-ассоциация",
@@ -87,13 +86,27 @@ def _build_prompt(request: RouteRequest, candidates: list[dict]) -> str:
         f"Аудитория: {request.audience}.\n"
         f"{time_line}\n"
         f"{interests_line}\n\n"
-        "Доступные экспонаты (id, название, автор, зал, техника):\n"
+        "Доступные экспонаты (id, название, автор, зал, здание, техника):\n"
         + "\n".join(
             f"- {item['id']}: {item['name']} | {item['author'] or 'Неизвестный мастер'} | "
-            f"зал {item['hall'] or '?'} | {item['type'] or '?'}"
+            f"зал {item['hall'] or '?'} | здание {item['building'] or '?'} | {item['type'] or '?'}"
             for item in candidates
         )
     )
+
+
+def _location_from_candidate(candidate: dict) -> str:
+    """Человекочитаемая локация экспоната из данных датасета.
+
+    В датасете хранятся номер зала (`hall`) и номер здания (`building`).
+    У части экспонатов зал пустой — тогда показываем хотя бы здание.
+    """
+    parts: list[str] = []
+    if candidate.get("hall"):
+        parts.append(f"Зал {candidate['hall']}")
+    if candidate.get("building"):
+        parts.append(f"Здание {candidate['building']}")
+    return ", ".join(parts)
 
 
 def _parse_route(raw_answer: str, candidates: dict[str, dict]) -> RouteResponse:
@@ -122,7 +135,7 @@ def _parse_route(raw_answer: str, candidates: dict[str, dict]) -> RouteResponse:
                 id=stop_id,
                 name=str(stop.get("name") or candidate.get("name") or "Без названия"),
                 author=str(stop.get("author") or candidate.get("author") or "Неизвестный мастер"),
-                location=str(stop.get("location") or candidate.get("hall") or ""),
+                location=_location_from_candidate(candidate),
                 why=str(stop.get("why", "")),
                 story=str(stop.get("story", "")),
                 fun_fact=str(stop.get("fun_fact", "")),
