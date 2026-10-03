@@ -76,6 +76,9 @@ def test_route_groups_stops_by_building(monkeypatch):
     assert [stop["id"] for stop in groups[1]["stops"]] == ["3687"]
     # Здание 116 в локации отображается человекочитаемым названием.
     assert "Главное здание" in groups[1]["stops"][0]["location"]
+    # Внутренний id зала 191 переводится в реальный номер «Зал 16».
+    assert "Зал 16" in groups[1]["stops"][0]["location"]
+    assert "Зал 191" not in groups[1]["stops"][0]["location"]
 
 
 def test_route_injects_image_from_dataset(monkeypatch):
