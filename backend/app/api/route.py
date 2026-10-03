@@ -69,7 +69,7 @@ AGENT_INSTRUCTIONS = """Ты — «Искусствовед-переводчик
       "id": "числовой id из списка",
       "name": "Название",
       "author": "Автор или 'Неизвестный мастер'",
-      "why": "почему объект в маршруте для этой аудитории",
+      "why": "1-2 необычных/интересных факта об экспонате, его авторе или эпохе создания, взятых ИЗ описания в списке доступных экспонатов (не выдумывай!)",
       "story": "рассказ для новичка: что вижу, почему круто, деталь (3-5 предложений)",
       "fun_fact": "одна короткая зацепка-ассоциация",
       "quest": "мини-задание «найди на экспонате...» (пустая строка, если не подходит)"
@@ -86,10 +86,11 @@ def _build_prompt(request: RouteRequest, candidates: list[dict]) -> str:
         f"Аудитория: {request.audience}.\n"
         f"{time_line}\n"
         f"{interests_line}\n\n"
-        "Доступные экспонаты (id, название, автор, зал, здание, техника):\n"
+        "Доступные экспонаты (id, название, автор, зал, здание, техника, описание):\n"
         + "\n".join(
             f"- {item['id']}: {item['name']} | {item['author'] or 'Неизвестный мастер'} | "
-            f"зал {item['hall'] or '?'} | здание {item['building'] or '?'} | {item['type'] or '?'}"
+            f"зал {item['hall'] or '?'} | здание {item['building'] or '?'} | {item['type'] or '?'} | "
+            f"{item['text'][:600] or item['annotation'][:600] or 'нет описания'}"
             for item in candidates
         )
     )
@@ -143,7 +144,9 @@ def _parse_route(raw_answer: str, candidates: dict[str, dict]) -> RouteResponse:
             RouteStop(
                 id=stop_id,
                 name=str(stop.get("name") or candidate.get("name") or "Без названия"),
-                author=str(stop.get("author") or candidate.get("author") or "Неизвестный мастер"),
+                # Автор всегда берём из датасета: модель может ошибиться
+                # или написать «Неизвестный мастер» там, где автор известен.
+                author=candidate.get("author") or "Неизвестный мастер",
                 location=_location_from_candidate(candidate),
                 why=str(stop.get("why", "")),
                 story=str(stop.get("story", "")),

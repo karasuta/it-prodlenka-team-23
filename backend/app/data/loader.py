@@ -19,7 +19,7 @@ MASTERPIECES_PATH = DATA_DIR / "masterpieces.json"
 class Masterpiece:
     """Нормализованный экспонат. Все поля опциональны: в датасете они часто пустые."""
 
-    __slots__ = ("id", "name", "author", "period", "type_", "country", "material", "size", "hall", "building", "text", "images")
+    __slots__ = ("id", "name", "author", "period", "type_", "country", "material", "size", "hall", "building", "text", "annotation", "images")
 
     def __init__(self, raw: dict[str, Any], object_id: str) -> None:
         self.id = object_id
@@ -33,6 +33,7 @@ class Masterpiece:
         self.hall = str(raw.get("hall") or "")
         self.building = str(raw.get("building") or "")
         self.text = _ru(raw.get("text")) or ""
+        self.annotation = _ru(raw.get("annotation")) or ""
         self.images = _images(raw)
 
     def to_dict(self) -> dict[str, Any]:
@@ -48,6 +49,7 @@ class Masterpiece:
             "hall": self.hall,
             "building": self.building,
             "text": self.text,
+            "annotation": self.annotation,
             "images": self.images,
         }
 
