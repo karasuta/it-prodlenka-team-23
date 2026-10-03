@@ -69,27 +69,30 @@ function StopCard({ stop, index }: { stop: RouteStop; index: number }) {
 }
 
 export function RouteList({ data }: { data: RouteResponse }) {
-  let stopIndex = 0;
-
   return (
     <section className="flex flex-col gap-4">
       <p className="text-lg font-medium text-gray-800">{data.intro}</p>
 
-      {data.groups.map((group) => (
-        <div key={group.building} className="flex flex-col gap-3">
-          <h2 className="mt-2 text-lg font-bold text-gray-900">
-            {buildingLabel(group.building)}
-          </h2>
+      {data.groups.map((group, groupIndex) => {
+        // Сквозная нумерация остановок: смещение = сумма остановок в предыдущих группах.
+        const offset = data.groups
+          .slice(0, groupIndex)
+          .reduce((sum, prev) => sum + prev.stops.length, 0);
 
-          <ol className="flex list-none flex-col gap-5">
-            {group.stops.map((stop) => {
-              const currentIndex = stopIndex;
-              stopIndex += 1;
-              return <StopCard key={stop.id} stop={stop} index={currentIndex} />;
-            })}
-          </ol>
-        </div>
-      ))}
+        return (
+          <div key={group.building} className="flex flex-col gap-3">
+            <h2 className="mt-2 text-lg font-bold text-gray-900">
+              {buildingLabel(group.building)}
+            </h2>
+
+            <ol className="flex list-none flex-col gap-5">
+              {group.stops.map((stop, index) => (
+                <StopCard key={stop.id} stop={stop} index={offset + index} />
+              ))}
+            </ol>
+          </div>
+        );
+      })}
 
       <p className="rounded-xl bg-blue-50 p-4 text-gray-800">{data.outro}</p>
     </section>
