@@ -31,3 +31,24 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return (await response.json()) as T;
 }
+
+export async function apiPost<T>(path: string, body: unknown, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  headers.set("Accept", "application/json");
+  if (body !== undefined) headers.set("Content-Type", "application/json");
+  let response: Response;
+  try {
+    response = await fetch(apiUrl(path), {
+      ...init,
+      method: "POST",
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiError("Network error: backend is unreachable");
+  }
+  if (!response.ok) {
+    throw new ApiError(`Request failed with status ${response.status}`, response.status);
+  }
+  return (await response.json()) as T;
+}
