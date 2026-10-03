@@ -8,6 +8,7 @@ export type RouteStop = {
   id: string;
   name: string;
   author: string;
+  location: string;
   why: string;
   story: string;
   fun_fact: string;

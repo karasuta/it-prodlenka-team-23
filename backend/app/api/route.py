@@ -35,6 +35,7 @@ class RouteStop(BaseModel):
     id: str
     name: str
     author: str
+    location: str = ""
     why: str
     story: str
     fun_fact: str
@@ -58,6 +59,7 @@ AGENT_INSTRUCTIONS = """Ты — «Искусствовед-переводчик
 5. Не перегружай: 5-7 объектов, короткие рассказы.
 6. Адаптируйся под аудиторию: детям — квесты «найди на картине», туристу — хиты и порядок обхода, студенту — связь с современностью, знатоку — редкие детали.
 7. Отвечай на русском, живым и тёплым тоном.
+8. Не начинай каждый рассказ с «На этой картине...» — используй разные формулировки: «Здесь», «В центре внимания», «Смотрите», «Этот экспонат» и т.п.
 
 Ответ — строго JSON без markdown-обёртки:
 {
@@ -67,6 +69,7 @@ AGENT_INSTRUCTIONS = """Ты — «Искусствовед-переводчик
       "id": "числовой id из списка",
       "name": "Название",
       "author": "Автор или 'Неизвестный мастер'",
+      "location": "где находится экспонат: зал или часть музея",
       "why": "почему объект в маршруте для этой аудитории",
       "story": "рассказ для новичка: что вижу, почему круто, деталь (3-5 предложений)",
       "fun_fact": "одна короткая зацепка-ассоциация",
@@ -111,11 +114,15 @@ def _parse_route(raw_answer: str, candidates: dict[str, dict]) -> RouteResponse:
     for stop in payload.get("route", []):
         stop_id = str(stop.get("id", ""))
         candidate = candidates.get(stop_id, {})
+        # Исключаем объекты без фото: в маршруте остаются только экспонаты с изображением.
+        if not candidate.get("images"):
+            continue
         stops.append(
             RouteStop(
                 id=stop_id,
                 name=str(stop.get("name") or candidate.get("name") or "Без названия"),
                 author=str(stop.get("author") or candidate.get("author") or "Неизвестный мастер"),
+                location=str(stop.get("location") or candidate.get("hall") or ""),
                 why=str(stop.get("why", "")),
                 story=str(stop.get("story", "")),
                 fun_fact=str(stop.get("fun_fact", "")),

@@ -27,7 +27,7 @@ export function RouteList({ data }: { data: RouteResponse }) {
                     src={imageUrl(stop.image)}
                     alt={stop.name}
                     loading="lazy"
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-contain p-2"
                     onError={(e) => {
                       // Если картинка не загрузилась — прячем её, остаётся серый фон.
                       e.currentTarget.style.display = "none";
@@ -39,12 +39,13 @@ export function RouteList({ data }: { data: RouteResponse }) {
                 <p className="text-sm font-semibold text-blue-700">Остановка {index + 1}</p>
                 <h3 className="text-xl font-bold text-gray-900">{stop.name}</h3>
                 {stop.author && <p className="text-sm text-gray-500">{stop.author}</p>}
+                {stop.location && <p className="text-sm text-gray-500">{stop.location}</p>}
 
                 <p className="text-gray-800">{stop.story}</p>
 
                 {stop.why && (
                   <p className="text-sm text-gray-600">
-                    <span className="font-semibold">Почему это вам: </span>
+                    <span className="font-semibold">Это интересно: </span>
                     {stop.why}
                   </p>
                 )}
